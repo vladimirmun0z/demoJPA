@@ -1,5 +1,6 @@
 package com.demojpa;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -13,16 +14,30 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import com.demojpa.models.Categoria;
+import com.demojpa.models.Perfil;
+import com.demojpa.models.Trip;
+import com.demojpa.models.Usuario;
 import com.demojpa.repository.ICategoriasRepository;
+import com.demojpa.repository.IPerfilesRepository;
+import com.demojpa.repository.ITripRepository;
+import com.demojpa.repository.IUsuariosRepository;
 
 @SpringBootApplication
-
 
 public class DemoJpaApplication implements CommandLineRunner {
 	
 	
 	@Autowired
+	private ITripRepository repoTrip;
+	
+	@Autowired
 	private ICategoriasRepository repoCategoria;
+	
+	@Autowired
+	private IPerfilesRepository repoPerfil;
+	
+	@Autowired
+	private IUsuariosRepository repoUsuario;
 
 	public static void main(String[] args) {
 		SpringApplication.run(DemoJpaApplication.class, args);
@@ -47,22 +62,148 @@ public class DemoJpaApplication implements CommandLineRunner {
 		//guardarTodas();
 		
 		
-		//Metodos con JPAPepository
+		//METODOS JPAPepository
 		
 		//buscarTodosJpa();
 		//borrarEnBatch();
 		//buscarTodosOrdenados();
 		//buscarTodoEnPaginacion();
 		
+		
+		//CLASE RELACIONES
+		
+		//buscarTrips();
+		//guardarTrip();
+		//crearPerfiles();
+		//crearUsuarioConDosPerfiles();
+		//getUsuario();
+		//buscarTripEstatus();
+		//buscarTripPorDestacadoEstatusOrdenadosDescId();
+		//buscarTripEntreCosto();
+		//buscarTripEstosEstatus();
+		
+	}
+	
+	//CLASE RELACIONES
+	
+	private void buscarTrips() {
+		List<Trip> lista = repoTrip.findAll();
+		for (Trip trip : lista)
+			System.out.println(trip.getId() + " " + trip.getNombre() + trip.getCategoria().getNombre());
+	}
+	
+	private void guardarTrip() {
+	    Trip trip = new Trip();
+	    trip.setNombre("Caminatas en la playa");
+	    trip.setDescripcion("Bonitas caminatas en la playa San Marcelino");
+	    trip.setFecha(new Date());
+	    trip.setCosto(15.0);
+	    trip.setEstatus("Aprobada");
+	    trip.setDestacado(0);
+	    trip.setImagen("trip1.png");
+	    trip.setDescripcion("Esta es una descripcion larga!!!");
+	    trip.setDetalles("Detalles del trip");
+	    Categoria categoria = new Categoria();
+	    categoria.setId(1);
+	    trip.setCategoria(categoria);
+
+	    repoTrip.save(trip);
+	}
+	
+	private List<Perfil> getListaPerfiles(){
+		
+		List<Perfil> lista = new LinkedList<Perfil>();
+		
+		Perfil perfil1 = new Perfil();
+		perfil1.setNombre("SuperAdministrador");
+			
+		Perfil perfil2 = new Perfil();
+		perfil2.setNombre("Admin");
+		
+		Perfil perfil3 = new Perfil();
+		perfil3.setNombre("Visitante");
+			
+		lista.add(perfil1);
+		lista.add(perfil2);
+		lista.add(perfil3);
+		
+		return lista;
+	}
+		
+	private void crearPerfiles() {
+		repoPerfil.saveAll(getListaPerfiles());
+	}
+	
+	private void crearUsuarioConDosPerfiles() {
+
+	    Usuario usuario = new Usuario();
+	    usuario.setNombre("Cesar Sanchez");
+	    usuario.setEmail("correo@correo.com");
+	    usuario.setUsarname("csanchez");
+	    usuario.setPassword("123");
+	    usuario.setStatus("Activo");
+
+	    Perfil perfil1 = new Perfil();
+	    perfil1.setId(1);
+
+	    Perfil perfil2 = new Perfil();
+	    perfil2.setId(2);
+
+	    usuario.agregarPerfil(perfil1);
+	    usuario.agregarPerfil(perfil2);
+
+	    repoUsuario.save(usuario);
+	}
+	
+	private void getUsuario() {
+	    Optional<Usuario> usuario = repoUsuario.findById(5);
+	    if (usuario.isPresent()) {
+	        Usuario usu = usuario.get();
+	        System.out.println("Usuario: " + usu.getNombre());
+	        System.out.println("Perfiles del Usuario:");
+	        for (Perfil p : usu.getPerfiles()) {
+	            System.out.println(p.getNombre());
+	        }
+	    }else {
+	        System.out.println("Usuario sin perfiles");
+	    }
+	}
+	
+	private void buscarTripEstatus() {
+		List<Trip> lista = repoTrip.findByEstatus("aprobada");
+		for (Trip t : lista)
+			System.out.println(t.getId() + ": " + t.getNombre() + "   Estatus: " + t.getEstatus());
+	}
+	
+	private void buscarTripPorDestacadoEstatusOrdenadosDescId() {
+		List<Trip> lista = repoTrip.findByDestacadoAndEstatusOrderByIdDesc(0, "aprobada");
+		for(Trip t : lista)
+			System.out.println(t.getId() + ": " + t.getNombre() + "   Estatus: " + t.getEstatus() + "   Destacado: " + t.getDestacado());
+	}
+	
+	private void buscarTripEntreCosto() {
+	List<Trip> lista = repoTrip.findByCostoBetween(10, 20);
+	for (Trip t : lista)
+		System.out.println(t.getId() + ": " + t.getNombre() + "   Costo: " + t.getCosto());
+	}
+	
+	private void buscarTripEstosEstatus() {
+		String[] estatus = new String[] {"Aprobada", "Reprobada"};
+		List<Trip> lista = repoTrip.findByEstatusIn(estatus);
+		for(Trip t : lista)
+			System.out.println(t.getId() + ": " + t.getNombre() + "   Estatus: " + t.getEstatus());
 	}
 	
 	
+	
+	
+	//METODOS CATEGORIA
 	
 	//metodo guardar
 	private void guardar() {
 		Categoria categoria = new Categoria();
 		categoria.setNombre("Trips en la playa");
-		categoria.setDescripcion("Paseos en la playa para ver el atardecer");
+		categoria.setDescripcion("Todo tipo de paseos en la playa");
 		repoCategoria.save(categoria);
 	}
 	
@@ -199,8 +340,6 @@ public class DemoJpaApplication implements CommandLineRunner {
 	
 
 	
-	
-	
 	private void testConexion() {
 		System.out.println("probando conexion...");
 
@@ -212,4 +351,5 @@ public class DemoJpaApplication implements CommandLineRunner {
 
 	}
 }
+
 
